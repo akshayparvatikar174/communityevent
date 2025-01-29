@@ -1,7 +1,3 @@
-execute 'update_package_list' do
-  command 'apt update -y'
-end
-
 # Install the latest version of Nginx
 package 'nginx' do
   action :upgrade
