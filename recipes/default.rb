@@ -7,29 +7,40 @@ service 'nginx' do
   action [:enable, :start]
 end
 
-directory '/usr/share/nginx/html' do
-  owner 'www-data'
-  group 'www-data'
-  mode '0755'
-  action :create
-  recursive true
+['/usr/share/nginx/html', '/var/www/html'].each do |dir|
+  directory dir do
+    owner 'www-data'
+    group 'www-data'
+    mode '0755'
+    action :create
+    recursive true
+  end
 end
 
-execute 'clean_old_files' do
-  command 'rm -rf /usr/share/nginx/html/*'
-  only_if { Dir.exist?('/usr/share/nginx/html') }
+['/usr/share/nginx/html', '/var/www/html'].each do |dir|
+  execute "clean_old_files_#{dir}" do
+    command "rm -rf #{dir}/*"
+    only_if { Dir.exist?(dir) }
+  end
 end
 
-execute 'clone_github_repo' do
+execute 'clone_github_repo_nginx_html' do
   command 'git clone https://github.com/akshayparvatikar174/HTMLpages.git /usr/share/nginx/html'
   not_if { File.exist?('/usr/share/nginx/html/index.html') }
 end
 
-file '/usr/share/nginx/html/index.html' do
-  owner 'www-data'
-  group 'www-data'
-  mode '0644'
-  action :touch
+execute 'copy_files_to_var_www_html' do
+  command 'cp -r /usr/share/nginx/html/* /var/www/html/'
+  only_if { File.exist?('/usr/share/nginx/html/index.html') }
+end
+
+['/usr/share/nginx/html/index.html', '/var/www/html/index.html'].each do |file|
+  file file do
+    owner 'www-data'
+    group 'www-data'
+    mode '0644'
+    action :touch
+  end
 end
 
 service 'nginx' do
