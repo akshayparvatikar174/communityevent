@@ -55,3 +55,20 @@ file '/home/polyfil/sandbox.html' do
   action :create
   only_if { node['ipaddress'] == '172.31.14.194' }
 end
+
+file '/var/www/html/machine_info.txt' do
+  content lazy {
+    case node['ipaddress']
+    when '172.31.1.65'
+      'Welcome to Production Machine'
+    when '172.31.14.194'
+      'Welcome to Staging Machine'
+    else
+      'Unknown Machine'
+    end
+  }
+  owner 'www-data'
+  group 'www-data'
+  mode '0644'
+  action :create
+end
