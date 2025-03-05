@@ -47,11 +47,11 @@ service 'nginx' do
   action :restart
 end
 
-file '/home/polyfil/test.html' do
+file '/home/polyfil/sandbox.html' do
   content '<h1>Hello, Chef!</h1>'
   owner 'root'
   group 'root'
   mode '0644'
   action :create
-  only_if { node['ipaddress'] == '172.31.6.200' }
+  only_if { node['ipaddress'] == '172.31.14.194' }
 end
