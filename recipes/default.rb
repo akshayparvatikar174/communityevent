@@ -53,5 +53,5 @@ file '/home/polyfil/test.html' do
   group 'root'
   mode '0644'
   action :create
-  only_if { node['ipaddress'] == '172.31.1.65' }
+  only_if { node['ipaddress'] == '172.31.6.200' }
 end
