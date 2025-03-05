@@ -57,48 +57,34 @@ end
 
 # Define machine-specific message
 machine_message = case node['ipaddress']
-                  when '172.31.1.65' then 'Welcome to Production Machine'
-                  when '172.31.14.194' then 'Welcome to Staging Machine'
+                  when '172.31.1.65' then 'Welcome to Machine 1'
+                  when '172.31.14.194' then 'Welcome to Machine 2'
                   else 'Unknown Machine'
                   end
 
-# Create machine_info.txt file with machine-specific message
-file '/var/www/html/machine_info.txt' do
-  content machine_message
+# Ensure the correct owner and permissions for index.html
+file '/var/www/html/index.html' do
   owner 'www-data'
   group 'www-data'
   mode '0644'
   action :create
 end
 
-# Ensure Nginx serves static files properly
-file '/etc/nginx/sites-available/default' do
-  content <<-CONF
-server {
-    listen 80;
-    server_name _;
-    root /var/www/html;
-    index index.html;
+# Replace placeholder {{MACHINE_MESSAGE}} in index.html
+ruby_block 'replace_machine_message' do
+  block do
+    file_path = '/var/www/html/index.html'
 
-    location / {
-        try_files $uri $uri/ =404;
-    }
+    # Read the current file content
+    content = ::File.read(file_path)
 
-    location /machine_info.txt {
-        default_type text/plain;
-    }
-}
-  CONF
-  owner 'root'
-  group 'root'
-  mode '0644'
-  action :create
-end
-
-# Enable the Nginx config
-execute 'enable_nginx_site' do
-  command 'ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default'
-  not_if { File.exist?('/etc/nginx/sites-enabled/default') }
+    # Replace placeholder only if it exists
+    if content.include?('{{MACHINE_MESSAGE}}')
+      new_content = content.gsub('{{MACHINE_MESSAGE}}', machine_message)
+      ::File.write(file_path, new_content)
+    end
+  end
+  only_if { File.exist?('/var/www/html/index.html') }
 end
 
 # Restart Nginx to apply changes
