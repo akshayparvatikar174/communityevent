@@ -62,29 +62,28 @@ machine_message = case node['ipaddress']
                   else 'Unknown Machine'
                   end
 
-# Ensure the correct owner and permissions for index.html
-file '/var/www/html/index.html' do
-  owner 'www-data'
-  group 'www-data'
-  mode '0644'
-  action :create
-end
-
-# Replace placeholder {{MACHINE_MESSAGE}} in index.html
 ruby_block 'replace_machine_message' do
   block do
     file_path = '/var/www/html/index.html'
+    
+    if File.exist?(file_path)
+      content = File.read(file_path)
 
-    # Read the current file content
-    content = ::File.read(file_path)
+      # Debugging: Print current content (Optional)
+      puts "Current index.html content: #{content}" 
 
-    # Replace placeholder only if it exists
-    if content.include?('{{MACHINE_MESSAGE}}')
-      new_content = content.gsub('{{MACHINE_MESSAGE}}', machine_message)
-      ::File.write(file_path, new_content)
+      if content.include?('{{MACHINE_MESSAGE}}')
+        new_content = content.gsub('{{MACHINE_MESSAGE}}', machine_message)
+        File.write(file_path, new_content)
+        puts "Updated index.html with: #{machine_message}"
+      else
+        puts "Placeholder not found in index.html!"
+      end
+    else
+      puts "File /var/www/html/index.html does not exist!"
     end
   end
-  only_if { File.exist?('/var/www/html/index.html') }
+  action :run
 end
 
 # Restart Nginx to apply changes
