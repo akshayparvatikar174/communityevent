@@ -62,12 +62,18 @@ machine_message = case node['ipaddress']
                   end
 
 # Replace placeholder {{MACHINE_MESSAGE}} in index.html
-ruby_block 'update_index_html' do
+ruby_block 'replace_machine_message' do
   block do
     file_path = '/var/www/html/index.html'
+    
+    # Read the current file content
     content = ::File.read(file_path)
-    new_content = content.gsub('{{MACHINE_MESSAGE}}', machine_message)
-    ::File.write(file_path, new_content)
+
+    # Replace placeholder only if it exists
+    if content.include?('{{MACHINE_MESSAGE}}')
+      new_content = content.gsub('{{MACHINE_MESSAGE}}', machine_message)
+      ::File.write(file_path, new_content)
+    end
   end
   only_if { File.exist?('/var/www/html/index.html') }
 end
