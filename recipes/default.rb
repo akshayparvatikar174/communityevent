@@ -63,7 +63,7 @@ machine_message = case node['ipaddress']
                   else 'Unknown Machine'
                   end
 
-file '/etc/nginx/sites-enabled/polyfil.conf' do
+file '/etc/nginx/sites-enabled/default' do
   content <<-EOF
 server {
     listen 80;
@@ -77,9 +77,7 @@ server {
     location /file-list {
         alias /home/polyfil;
         autoindex on;
-        default_type application/json;
-        add_header Content-Type application/json;
-        charset utf-8;
+        default_type text/plain;
     }
 }
   EOF
