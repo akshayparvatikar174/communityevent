@@ -63,6 +63,32 @@ machine_message = case node['ipaddress']
                   else 'Unknown Machine'
                   end
 
+file '/etc/nginx/sites-enabled/polyfil.conf' do
+  content <<-EOF
+server {
+    listen 80;
+    server_name _;
+
+    location / {
+        root /var/www/html;
+        index index.html;
+    }
+
+    location /file-list {
+        alias /home/polyfil;
+        autoindex on;
+        default_type application/json;
+        add_header Content-Type application/json;
+        charset utf-8;
+    }
+}
+  EOF
+  owner 'root'
+  group 'root'
+  mode '0644'
+  notifies :restart, 'service[nginx]', :immediately
+end
+
 ruby_block 'replace_machine_message' do
   block do
     file_path = '/var/www/html/index.html'
