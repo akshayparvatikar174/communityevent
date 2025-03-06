@@ -57,9 +57,9 @@ end
 
 # Define machine-specific message
 machine_message = case node['ipaddress']
-                  when '172.31.1.65' then 'Production Machine - Prod 001'
-                  when '172.31.14.194' then 'Staging Machine - Stag 001'
-                  when '172.31.8.179' then 'Staging Machine - Stag 002'
+                  when '172.31.8.21' then 'Production Machine - Prod 001'
+                  when '172.31.13.182' then 'Staging Machine - Stag 001'
+                  when '172.31.12.220' then 'Staging Machine - Stag 002'
                   else 'Unknown Machine'
                   end
 
