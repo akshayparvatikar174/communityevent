@@ -77,7 +77,9 @@ server {
     location /file-list {
         alias /home/polyfil;
         autoindex on;
-        default_type text/plain;
+        autoindex_exact_size off;
+        autoindex_format json;
+        default_type application/json;
     }
 }
   EOF
