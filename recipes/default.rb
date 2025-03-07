@@ -55,18 +55,9 @@ file '/home/polyfil/sandbox.html' do
   only_if { node['ipaddress'] == '172.31.13.182' }
 end
 
-file '/home/ubuntu/aws/confirm.txt' do
-  content '<h1>Confirmation of the file</h1>'
-  owner 'root'
-  group 'root'
-  mode '0644'
-  action :create
-  only_if { node['ipaddress'] == '172.31.14.3' }
-end
-
 # Define machine-specific message
 machine_message = case node['ipaddress']
-                  when '172.31.8.21' then 'Production Machine - Prod 001'
+                  when '172.31.15.184' then 'Production Machine - Prod 001'
                   when '172.31.13.182' then 'Staging Machine - Stag 001'
                   when '172.31.12.220' then 'Staging Machine - Stag 002'
                   else 'Unknown Machine'
