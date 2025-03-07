@@ -52,7 +52,7 @@ file '/home/polyfil/sandbox.html' do
   group 'root'
   mode '0644'
   action :create
-  only_if { node['ipaddress'] == '172.31.14.194' }
+  only_if { node['ipaddress'] == '172.31.13.182' }
 end
 
 # Define machine-specific message
