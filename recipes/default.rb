@@ -64,14 +64,6 @@ file '/home/polyfil/sandbox.html' do
   only_if { node['ipaddress'] == '172.31.13.182' }
 end
 
-# Define a message based on the machine's IP address
-machine_message = case node['ipaddress']
-                  when '172.31.15.184' then 'Production Machine - Prod 001'
-                  when '172.31.13.182' then 'Staging Machine - Stag 001'
-                  when '172.31.12.220' then 'Staging Machine - Stag 002'
-                  else 'Unknown Machine'
-                  end
-
 # Configure Nginx to serve files from /var/www/html and enable directory listing for /home/polyfil
 file '/etc/nginx/sites-enabled/default' do
   content <<-EOF
@@ -97,31 +89,6 @@ server {
   group 'root'
   mode '0644'
   notifies :restart, 'service[nginx]', :immediately
-end
-
-# Replace the placeholder '{{MACHINE_MESSAGE}}' in index.html with the actual machine message
-ruby_block 'replace_machine_message' do
-  block do
-    file_path = '/var/www/html/index.html'
-    
-    if File.exist?(file_path)
-      content = File.read(file_path)
-
-      # Debugging: Print current content (Optional)
-      puts "Current index.html content: #{content}" 
-
-      if content.include?('{{MACHINE_MESSAGE}}')
-        new_content = content.gsub('{{MACHINE_MESSAGE}}', machine_message)
-        File.write(file_path, new_content)
-        puts "Updated index.html with: #{machine_message}"
-      else
-        puts "Placeholder not found in index.html!"
-      end
-    else
-      puts "File /var/www/html/index.html does not exist!"
-    end
-  end
-  action :run
 end
 
 # Restart Nginx to apply changes
