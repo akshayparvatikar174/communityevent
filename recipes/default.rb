@@ -3,12 +3,17 @@ package 'nginx' do
   action :upgrade
 end
 
-# Enable and start the Nginx service to ensure it runs at boot and is currently active
+# Ensure Git is installed before cloning the repository
+package 'git' do
+  action :install
+end
+
+# Enable and start the Nginx service to ensure it runs at boot
 service 'nginx' do
   action [:enable, :start]
 end
 
-# Define an array of directories that should exist for serving web content
+# Ensure required directories exist
 ['/usr/share/nginx/html', '/var/www/html'].each do |dir|
   directory dir do
     owner 'www-data'
@@ -19,52 +24,59 @@ end
   end
 end
 
-# Clean old files in the specified directories to ensure a fresh deployment
+# Clean old files before cloning
 ['/usr/share/nginx/html', '/var/www/html'].each do |dir|
   execute "clean_old_files_#{dir}" do
     command "rm -rf #{dir}/*"
-    only_if { Dir.exist?(dir) }
+    only_if { Dir.exist?(dir) && Dir.entries(dir).size > 2 }
   end
 end
 
-# Clone the GitHub repository containing HTML files into the Nginx root directory
+# Clone the GitHub repository
 execute 'clone_github_repo_nginx_html' do
   command 'git clone https://github.com/akshayparvatikar174/HTMLpages.git /usr/share/nginx/html'
   not_if { File.exist?('/usr/share/nginx/html/index.html') }
+  retries 3
+  retry_delay 5
 end
 
-# Copy files from /usr/share/nginx/html to /var/www/html to keep both directories in sync
+# Ensure correct permissions for the cloned files
+execute 'fix_permissions_for_nginx_html' do
+  command 'chown -R www-data:www-data /usr/share/nginx/html && chmod -R 755 /usr/share/nginx/html'
+end
+
+# Copy files to /var/www/html
 execute 'copy_files_to_var_www_html' do
   command 'cp -r /usr/share/nginx/html/* /var/www/html/'
   only_if { File.exist?('/usr/share/nginx/html/index.html') }
 end
 
-# Ensure the index.html file has correct ownership and permissions in both locations
-['/usr/share/nginx/html/index.html', '/var/www/html/index.html'].each do |file|
-  file file do
-    owner 'www-data'
-    group 'www-data'
-    mode '0644'
-    action :touch
-  end
+# Ensure correct permissions for /var/www/html
+execute 'fix_permissions_for_var_www_html' do
+  command 'chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html'
 end
 
-# Restart Nginx service to apply changes
-service 'nginx' do
-  action :restart
+# Define machine-specific message based on IP address
+machine_message = case node['ipaddress']
+                  when '54.219.227.136' then 'Production Machine - Prod 001'
+                  else 'Unknown Machine'
+                  end
+
+# Verify that the machine message is correctly assigned
+log 'machine_message' do
+  message "Machine message: #{machine_message}"
+  level :info
 end
 
-# Create a sandbox HTML file only on a specific machine (IP: 172.31.13.182)
-file '/home/polyfil/sandbox.html' do
-  content '<h1>Hello, Chef!</h1>'
+# Ensure the directory for Nginx site configuration exists
+directory '/etc/nginx/sites-enabled' do
   owner 'root'
   group 'root'
-  mode '0644'
+  mode '0755'
   action :create
-  only_if { node['ipaddress'] == '172.31.13.182' }
 end
 
-# Configure Nginx to serve files from /var/www/html and enable directory listing for /home/polyfil
+# Create or modify the Nginx site configuration
 file '/etc/nginx/sites-enabled/default' do
   content <<-EOF
 server {
@@ -74,6 +86,8 @@ server {
     location / {
         root /var/www/html;
         index index.html;
+        sub_filter '{{MACHINE_MESSAGE}}' '#{machine_message}';  # Replace placeholder with actual message
+        sub_filter_once off;  # Ensure it replaces all instances of the placeholder
     }
 
     location /file-list {
@@ -91,7 +105,17 @@ server {
   notifies :restart, 'service[nginx]', :immediately
 end
 
-# Restart Nginx to apply changes
+# Create a sandbox HTML file only on a specific machine (IP: 172.31.13.182)
+file '/home/polyfil/sandbox.html' do
+  content '<h1>Hello, Chef!</h1>'
+  owner 'root'
+  group 'root'
+  mode '0644'
+  action :create
+  only_if { node['ipaddress'] == '172.31.13.182' }
+end
+
+# Restart Nginx service to apply changes
 service 'nginx' do
   action :restart
 end
